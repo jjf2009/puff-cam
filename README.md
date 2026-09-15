@@ -1,9 +1,13 @@
-# Virtual-Cigarette
+# puff-cam
 
-Webcam toy: hold a virtual cigarette, vape, or cigar between your thumb and index
-finger. Bring it to your mouth and it puffs smoke.
+A webcam toy: pinch your thumb and index finger like you're holding a
+cigarette, vape, or cigar. Bring it to your mouth and it puffs smoke, sized
+and angled to your actual hand.
 
-Built with OpenCV + MediaPipe (hand and face landmarks).
+No image assets — the items and the smoke are both drawn procedurally with
+OpenCV, shaded and lit like real cylinders instead of flat cutouts. Hand and
+mouth position come from MediaPipe's Tasks API (`HandLandmarker` +
+`FaceLandmarker`).
 
 ## Setup
 
@@ -29,11 +33,11 @@ MediaPipe model files (~12 MB) download into `models/` on first run.
 
 ## How it works
 
-- `hand_tracker.py`: finds your pinch point (between thumb and index tip) and hand angle
-- `face_tracker.py`: finds your mouth and face width
-- `gesture.py`: pinch closer to mouth than 0.35 × face width means you're smoking
-- `sprites.py`: draws the item at your pinch, rotated to match your hand
-- `smoke.py`: particle smoke that comes off the tip while you're smoking
+- [hand_tracker.py](hand_tracker.py): finds your pinch point (midpoint of thumb and index fingertip) and hand angle
+- [face_tracker.py](face_tracker.py): finds your mouth center and face width
+- [gesture.py](gesture.py): pinch closer to your mouth than `0.35 × face width` counts as smoking
+- [sprites.py](sprites.py): procedurally shaded cigarette/vape/cigar sprites, drawn at your pinch point, rotated and scaled to your hand
+- [smoke.py](smoke.py): particle system — spawns, drifts, fades, and blurs into a soft smoke/vapor cloud while you're smoking
 
 ## Troubleshooting
 
@@ -42,4 +46,5 @@ MediaPipe model files (~12 MB) download into `models/` on first run.
   The app tries camera indices 0–3 on its own.
 - **Black screen**: check the camera's privacy shutter or kill switch, and close
   any other app that's using the camera.
-- **Smoke triggers too easily or not at all**: change `SMOKING_RATIO` in `gesture.py`.
+- **Smoke triggers too easily or not at all**: change `SMOKING_RATIO` in [gesture.py](gesture.py).
+- **Item looks too big/small**: tweak the `scale` calculation in [main.py](main.py) (based on `hand_size`), or the base `length`/`width` in each `make_*` function in [sprites.py](sprites.py).
