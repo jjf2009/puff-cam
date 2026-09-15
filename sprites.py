@@ -67,7 +67,7 @@ def _round_cap(img, x, cy, half_w, base_bgr, direction=1, alpha=255):
         img[ya_c:yb_c, col, 3] = alpha
 
 
-def make_cigarette(length=130, width=16):
+def make_cigarette(length=78, width=8):
     """White paper filter cigarette with a cork-style filter tip and glowing ember."""
     pad = width
     img = _blank(length + pad, width * 2 + 4)
@@ -107,7 +107,7 @@ def make_cigarette(length=130, width=16):
     return img, (length - 1, cy)
 
 
-def make_vape(length=105, width=24):
+def make_vape(length=65, width=13):
     """Matte pen-style vape: brushed-metal battery/tank body, rounded dark
     mouthpiece at the smoke-emitting (rightmost pre-flip) end, glowing LED.
     """
@@ -135,7 +135,7 @@ def make_vape(length=105, width=24):
     return img, (length - 1, cy)
 
 
-def make_cigar(length=150, width=26):
+def make_cigar(length=92, width=11):
     """Tapered hand-rolled cigar: rounded cap, tobacco-leaf shading, foot end."""
     img = _blank(length + 4, width * 2 + 4)
     cy = width + 2
