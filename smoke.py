@@ -42,7 +42,7 @@ class Particle:
     @property
     def opacity(self):
         t = self.age / self.life
-        return max(0.0, 1.0 - t) * 0.55
+        return max(0.0, 1.0 - t) * 0.9
 
 
 class SmokeSystem:
@@ -63,18 +63,26 @@ class SmokeSystem:
         if not self.particles:
             return
         h, w = frame.shape[:2]
-        overlay = np.zeros((h, w, 3), dtype=np.uint8)
-        alpha_mask = np.zeros((h, w), dtype=np.float32)
+        # Only blur/blend the box the particles occupy, not the whole frame.
+        pad = 30
+        x0 = max(0, int(min(p.x - p.radius for p in self.particles)) - pad)
+        y0 = max(0, int(min(p.y - p.radius for p in self.particles)) - pad)
+        x1 = min(w, int(max(p.x + p.radius for p in self.particles)) + pad)
+        y1 = min(h, int(max(p.y + p.radius for p in self.particles)) + pad)
+        if x1 <= x0 or y1 <= y0:
+            return
+
+        overlay = np.zeros((y1 - y0, x1 - x0, 3), dtype=np.uint8)
+        alpha_mask = np.zeros((y1 - y0, x1 - x0), dtype=np.float32)
 
         for p in self.particles:
-            cx, cy = int(p.x), int(p.y)
-            if cx < 0 or cy < 0 or cx >= w or cy >= h:
-                continue
-            cv2.circle(overlay, (cx, cy), int(p.radius), p.color, -1)
-            cv2.circle(alpha_mask, (cx, cy), int(p.radius), float(p.opacity), -1)
+            center = (int(p.x) - x0, int(p.y) - y0)
+            cv2.circle(overlay, center, int(p.radius), p.color, -1)
+            cv2.circle(alpha_mask, center, int(p.radius), float(p.opacity), -1)
 
         overlay = cv2.GaussianBlur(overlay, (15, 15), 0)
         alpha_mask = cv2.GaussianBlur(alpha_mask, (15, 15), 0)
         alpha_3c = alpha_mask[:, :, None]
 
-        frame[:] = (frame.astype(np.float32) * (1 - alpha_3c) + overlay.astype(np.float32) * alpha_3c).astype(np.uint8)
+        roi = frame[y0:y1, x0:x1]
+        roi[:] = (roi.astype(np.float32) * (1 - alpha_3c) + overlay.astype(np.float32) * alpha_3c).astype(np.uint8)

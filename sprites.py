@@ -62,12 +62,29 @@ def build_sprites():
     return sprites
 
 
+def tip_position(sprite_bgra, tip, center_x, center_y, angle_deg, scale=1.0):
+    """Where `tip` lands after the same rotate+scale `overlay_transparent` applies.
+
+    Mirrors cv2.getRotationMatrix2D's convention, so call it with the identical
+    angle/scale used for the blit.
+    """
+    h, w = sprite_bgra.shape[:2]
+    dx = (tip[0] - w / 2) * scale
+    dy = (tip[1] - h / 2) * scale
+    a = np.radians(angle_deg)
+    cos_a, sin_a = np.cos(a), np.sin(a)
+    return (center_x + cos_a * dx + sin_a * dy,
+            center_y - sin_a * dx + cos_a * dy)
+
+
 def overlay_transparent(frame, sprite_bgra, center_x, center_y, angle_deg, scale=1.0):
     """Rotate/scale sprite_bgra around its own center and alpha-blend onto frame at (center_x, center_y)."""
     h, w = sprite_bgra.shape[:2]
     if h == 0 or w == 0 or scale <= 0:
         return
-    diag = int(np.ceil(np.hypot(w, h) * scale)) + 4
+    # Must fit the sprite at its original size (for placement) AND at its
+    # scaled size (for the warpAffine output), whichever is larger.
+    diag = int(np.ceil(np.hypot(w, h) * max(scale, 1.0))) + 4
     canvas = np.zeros((diag, diag, 4), dtype=np.uint8)
     ox, oy = (diag - w) // 2, (diag - h) // 2
     canvas[oy:oy + h, ox:ox + w] = sprite_bgra

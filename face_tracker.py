@@ -1,6 +1,11 @@
-"""MediaPipe Face Mesh wrapper exposing mouth center + face-width scale reference."""
+"""MediaPipe Tasks FaceLandmarker wrapper exposing mouth center + face-width scale reference."""
 import math
+
 import mediapipe as mp
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
+
+from models_setup import ensure_model
 
 MOUTH_TOP = 13
 MOUTH_BOTTOM = 14
@@ -9,21 +14,24 @@ FACE_RIGHT = 454
 
 
 class FaceTracker:
-    def __init__(self, detection_conf=0.6, tracking_conf=0.5):
-        self._mesh = mp.solutions.face_mesh.FaceMesh(
-            max_num_faces=1,
-            refine_landmarks=False,
-            min_detection_confidence=detection_conf,
+    def __init__(self, detection_conf=0.5, tracking_conf=0.5):
+        options = vision.FaceLandmarkerOptions(
+            base_options=mp_python.BaseOptions(model_asset_path=ensure_model("face_landmarker.task")),
+            running_mode=vision.RunningMode.VIDEO,
+            num_faces=1,
+            min_face_detection_confidence=detection_conf,
             min_tracking_confidence=tracking_conf,
         )
+        self._landmarker = vision.FaceLandmarker.create_from_options(options)
 
-    def process(self, rgb_frame, frame_w, frame_h):
+    def process(self, rgb_frame, frame_w, frame_h, timestamp_ms):
         """Returns None or dict: mouth (x,y), face_width (px)."""
-        result = self._mesh.process(rgb_frame)
-        if not result.multi_face_landmarks:
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+        result = self._landmarker.detect_for_video(mp_image, timestamp_ms)
+        if not result.face_landmarks:
             return None
 
-        lm = result.multi_face_landmarks[0].landmark
+        lm = result.face_landmarks[0]
 
         def pt(i):
             return (lm[i].x * frame_w, lm[i].y * frame_h)
@@ -37,4 +45,4 @@ class FaceTracker:
         return {"mouth": mouth, "face_width": face_width}
 
     def close(self):
-        self._mesh.close()
+        self._landmarker.close()
